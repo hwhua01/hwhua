@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>年化報酬率計算機 - MWRR/IRR</title>
+    <style>
+        :root {
+            --primary-color: #F9A826; 
+            --primary-hover: #E6951F; 
+            --accent-bg: #C9E3FF; 
+            --text-color: #2c3e50;
+            --light-bg: #f4f7f6;
+            --negative-color: #e74c3c; 
+            --positive-color: #27ae60; 
+            --border-color: #bdc3c7;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .calculator-container {
+            max-width: 550px;
+            width: 100%;
+            background-color: #ffffff;
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            margin-top: 10px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .calculator-container h1 {
+            text-align: center;
+            color: var(--text-color);
+            margin-top: 0;
+            font-size: 1.9em;
+            border-bottom: 3px solid var(--primary-color); 
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+
+        .description {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.92em;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .description a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-top: 8px;
+            display: inline-block;
+            transition: color 0.3s;
+        }
+
+        .description a:hover {
+            color: #000000;
+            text-decoration: none;
+        }
+
+        .input-group { 
+            margin-bottom: 22px;
+        }
+
+        .input-group label { 
+            display: block; 
+            margin-bottom: 8px; 
+            font-weight: 600; 
+            color: var(--text-color); 
+            font-size: 0.95em;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-group input[type="text"],
+        .input-group input[type="number"] { 
+            width: 100%; 
+            padding: 13px 15px; 
+            border: 2px solid var(--border-color); 
+            border-radius: 8px; 
+            font-size: 1em; 
+            transition: all 0.3s;
+            background-color: #fafafa;
+        }
+
+        .input-group input[type="text"]:focus,
+        .input-group input[type="number"]:focus { 
+            border-color: var(--primary-color); 
+            outline: none; 
+            box-shadow: 0 0 8px rgba(249, 168, 38, 0.3);
+            background-color: #fff;
+        }
+
+        .input-group input[type="text"]:hover,
+        .input-group input[type="number"]:hover {
+            border-color: #95a5a6;
+        }
+
+        .hint { 
+            color: #7f8c8d; 
+            font-size: 0.85em; 
+            display: block; 
+            margin-top: 6px;
+            font-style: italic;
+        }
+        
+        button {
+            width: 100%; 
+            padding: 14px 20px; 
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            font-size: 1.15em;
+            font-weight: 600;
+            cursor: pointer; 
+            transition: all 0.3s; 
+            margin-top: 10px;
+            box-shadow: 0 4px 12px rgba(249, 168, 38, 0.3);
+        }
+
+        button:hover { 
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(249, 168, 38, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result-area { 
+            margin-top: 30px; 
+            padding: 25px; 
+            border-radius: 12px; 
+            background: linear-gradient(135deg, #C9E3FF 0%, #a8d5ff 100%);
+            border: 2px solid #a3c9f2;
+            animation: slideIn 0.4s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-area h3 {
+            margin-top: 0;
+            margin-bottom: 18px;
+            color: var(--text-color);
+            font-size: 1.3em;
+            text-align: center;
+        }
+        
+        .result-item {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin: 14px 0; 
+            font-size: 1.05em; 
+            color: var(--text-color); 
+            line-height: 1.6; 
+            padding: 12px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .result-item:hover {
+            background-color: rgba(255, 255, 255, 0.95);
+            transform: translateX(5px);
+        }
+        
+        .result-item.highlight { 
+            font-size: 1.25em; 
+            font-weight: bold;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 2px solid var(--primary-color);
+            padding: 15px;
+        }
+
+        .result-label { 
+            flex-basis: 55%;
+            font-weight: 500;
+        }
+
+        .result-value { 
+            font-weight: 700; 
+            text-align: right; 
+            flex-basis: 45%;
+            font-size: 1.1em;
+        }
+        
+        .result-value.positive { color: var(--positive-color); }
+        .result-value.negative { color: var(--negative-color); }
+        .result-value.mwrR { color: var(--primary-color); }
+
+        .error-message {
+            color: var(--negative-color); 
+            text-align: center;
+            padding: 15px;
+            background-color: #ffe5e5;
+            border-radius: 8px;
+            border-left: 4px solid var(--negative-color);
+            font-weight: 600;
+        }
+
+        .info-box {
+            background-color: #e8f4f8;
+            border-left: 4px solid #3498db;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 6px;
+            font-size: 0.9em;
+            color: #2c3e50;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #2980b9;
+        }
+
+        @media (max-width: 600px) {
+            .calculator-container { 
+                padding: 25px 18px; 
+            }
+
+            .calculator-container h1 {
+                font-size: 1.6em;
+            }
+
+            .result-item { 
+                flex-direction: column; 
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .result-value { 
+                text-align: left; 
+                padding-left: 10px;
+                font-size: 1.15em;
+            }
+
+            button {
+                font-size: 1.05em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="calculator-container">
+    <h1>✨ 年化報酬率計算機</h1>
+    
+    <div class="description">
+        <strong>MWRR (Money-Weighted Rate of Return)</strong> 也稱為 IRR（內部報酬率），適用於有定期資金投入的情況，能精確反映實際投資報酬率。<br>
+        <a href="https://leveragetw.com/" target="_blank">槓桿學院</a>
+    </div>
+
+    <div class="input-group">
+        <label for="beginningValue">💰 期初金額（Year 0）</label>
+        <input type="text" id="beginningValue" value="100,000" placeholder="輸入初始投資金額">
+    </div>
+
+    <div class="input-group">
+        <label for="annualContribution">📊 每年再投入資金（Year 1 ~ Year T）</label>
+        <input type="text" id="annualContribution" value="12,000" placeholder="每年定期投入的金額">
+        <small class="hint">假設投入發生在每年期末</small>
+    </div>
+
+    <div class="input-group">
+        <label for="investmentYears">📅 投資年數（T）</label>
+        <input type="number" id="investmentYears" value="5" min="1" max="50" step="1" placeholder="投資的總年數">
+        <small class="hint">必須是 1-50 之間的整數</small>
+    </div>
+    
+    <div class="input-group">
+        <label for="endingValue">🎯 期末金額（Year T）</label>
+        <input type="text" id="endingValue" value="180,000" placeholder="投資結束時的總資產">
+    </div>
+
+    <button onclick="calculateMWRR()">🚀 開始計算 MWRR</button>
+
+    <div id="resultArea" style="display: none;"></div>
+</div>
+
+<script>
+'use strict';
+
+// IRR 計算函數 - 使用牛頓法（Newton's Method）
+function calculateIRR(cashFlows, initialGuess = 0.1) {
+    const hasPositive = cashFlows.some(cf => cf > 0);
+    const hasNegative = cashFlows.some(cf => cf < 0);
+    
+    if (!hasPositive || !hasNegative) {
+        return null;
+    }
+
+    const MAX_ITERATIONS = 1000;
+    const PRECISION = 1e-7;
+    let rate = initialGuess;
+
+    // 計算淨現值 (NPV)
+    const calculateNPV = (r) => {
+        return cashFlows.reduce((sum, cf, t) => {
+            return sum + cf / Math.pow(1 + r, t);
+        }, 0);
+    };
+
+    // 計算 NPV 的導數
+    const calculateDerivative = (r) => {
+        return cashFlows.reduce((sum, cf, t) => {
+            return sum - (cf * t) / Math.pow(1 + r, t + 1);
+        }, 0);
+    };
+
+    // 牛頓法迭代
+    for (let i = 0; i < MAX_ITERATIONS; i++) {
+        const npv = calculateNPV(rate);
+        
+        if (Math.abs(npv) < PRECISION) {
+            return rate;
+        }
+
+        const derivative = calculateDerivative(rate);
+        
+        if (Math.abs(derivative) < PRECISION) {
+            return null; // 導數過小，無法收斂
+        }
+
+        const newRate = rate - npv / derivative;
+        
+        if (Math.abs(newRate - rate) < PRECISION) {
+            return newRate;
+        }
+        
+        rate = newRate;
+    }
+
+    return null; // 未收斂
+}
+
+// 格式化數字加上千分位
+function formatNumberWithCommas(value) {
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+// 移除千分位符號
+function removeCommas(value) {
+    return value.replace(/,/g, '');
+}
+
+// 格式化貨幣
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('zh-TW', { 
+        style: 'currency', 
+        currency: 'TWD', 
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0 
+    }).format(amount);
+}
+
+// 格式化百分比
+function formatPercentage(rate) {
+    const sign = rate >= 0 ? '+' : '';
+    return `${sign}${(rate * 100).toFixed(2)}%`;
+}
+
+// 主計算函數
+function calculateMWRR() {
+    const beginningValue = parseFloat(removeCommas(document.getElementById('beginningValue').value)) || 0;
+    const annualContribution = parseFloat(removeCommas(document.getElementById('annualContribution').value)) || 0;
+    const investmentYears = parseInt(document.getElementById('investmentYears').value) || 0;
+    const endingValue = parseFloat(removeCommas(document.getElementById('endingValue').value)) || 0;
+    
+    const resultArea = document.getElementById('resultArea');
+
+    // 輸入驗證
+    if (investmentYears <= 0 || investmentYears > 50 || !Number.isInteger(investmentYears)) {
+        resultArea.style.display = 'block';
+        resultArea.innerHTML = '<div class="error-message">⚠️ 錯誤：投資年數必須是 1-50 之間的整數</div>';
+        return;
+    }
+
+    if (beginningValue < 0 || endingValue < 0 || annualContribution < 0) {
+        resultArea.style.display = 'block';
+        resultArea.innerHTML = '<div class="error-message">⚠️ 錯誤：所有金額必須為非負數</div>';
+        return;
+    }
+
+    if (beginningValue === 0 && annualContribution === 0) {
+        resultArea.style.display = 'block';
+        resultArea.innerHTML = '<div class="error-message">⚠️ 錯誤：期初金額和每年投入不能同時為 0</div>';
+        return;
+    }
+
+    // 建立現金流數組
+    const cashFlows = [-beginningValue];
+    
+    for (let i = 1; i < investmentYears; i++) {
+        cashFlows.push(-annualContribution);
+    }
+    
+    // 最後一期：期末總資產（正值）
+    cashFlows.push(endingValue);
+
+    // 計算指標
+    const totalInvestment = beginningValue + (investmentYears * annualContribution);
+    const totalGainLoss = endingValue - totalInvestment;
+    const mwrr = calculateIRR(cashFlows);
+
+    // 顯示結果
+    displayResults(totalInvestment, totalGainLoss, mwrr, investmentYears, endingValue);
+}
+
+// 顯示結果函數
+function displayResults(totalInvestment, totalGainLoss, mwrr, years, endingValue) {
+    const resultArea = document.getElementById('resultArea');
+    
+    let html = '<div class="result-area"><h3>📈 計算結果</h3>';
+    
+    // 投入本金總額
+    html += `
+        <div class="result-item">
+            <span class="result-label">💸 投入本金總額</span>
+            <span class="result-value">${formatCurrency(totalInvestment)}</span>
+        </div>
+    `;
+    
+    // 淨獲利/淨虧損
+    const gainLossClass = totalGainLoss > 0 ? 'positive' : (totalGainLoss < 0 ? 'negative' : '');
+    const gainLossEmoji = totalGainLoss > 0 ? '📈' : (totalGainLoss < 0 ? '📉' : '➖');
+    html += `
+        <div class="result-item">
+            <span class="result-label">${gainLossEmoji} 淨獲利/淨虧損</span>
+            <span class="result-value ${gainLossClass}">${formatCurrency(totalGainLoss)}</span>
+        </div>
+    `;
+
+    // MWRR (IRR)
+    html += '<div class="result-item highlight">';
+    if (mwrr === null) {
+        html += `
+            <span class="result-label">✨ 年化報酬率 (MWRR)</span>
+            <span class="result-value negative">無法計算</span>
+        `;
+    } else {
+        const mwrrClass = mwrr > 0 ? 'positive' : (mwrr < 0 ? 'negative' : '');
+        html += `
+            <span class="result-label">✨ 年化報酬率 (MWRR)</span>
+            <span class="result-value ${mwrrClass}">${formatPercentage(mwrr)}</span>
+        `;
+    }
+    html += '</div>';
+
+    // 說明資訊
+    if (mwrr !== null) {
+        const totalReturn = ((endingValue / totalInvestment - 1) * 100).toFixed(2);
+        html += `
+            <div class="info-box">
+                <strong>💡 說明：</strong><br>
+                • 總累積報酬率：${totalReturn}%<br>
+                • 投資期間：${years} 年<br>
+                • MWRR 考慮了資金流入時間的影響，是衡量實際投資績效的最佳指標
+            </div>
+        `;
+    }
+
+    html += '</div>';
+    
+    resultArea.innerHTML = html;
+    resultArea.style.display = 'block';
+}
+
+// 鍵盤事件 - Enter 鍵觸發計算
+document.addEventListener('DOMContentLoaded', () => {
+    const inputs = document.querySelectorAll('input[type="number"], input[type="text"]');
+    
+    // 為金額輸入框添加千分位格式化
+    const moneyInputs = ['beginningValue', 'annualContribution', 'endingValue'];
+    
+    moneyInputs.forEach(id => {
+        const input = document.getElementById(id);
+        
+        input.addEventListener('input', (e) => {
+            let value = removeCommas(e.target.value);
+            
+            // 只允許數字和小數點
+            value = value.replace(/[^\d.]/g, '');
+            
+            // 確保只有一個小數點
+            const parts = value.split('.');
+            if (parts.length > 2) {
+                value = parts[0] + '.' + parts.slice(1).join('');
+            }
+            
+            // 格式化整數部分
+            if (value) {
+                const [integer, decimal] = value.split('.');
+                const formattedInteger = formatNumberWithCommas(integer);
+                value = decimal !== undefined ? `${formattedInteger}.${decimal}` : formattedInteger;
+            }
+            
+            e.target.value = value;
+        });
+        
+        input.addEventListener('blur', (e) => {
+            let value = removeCommas(e.target.value);
+            if (value) {
+                const num = parseFloat(value);
+                if (!isNaN(num)) {
+                    e.target.value = formatNumberWithCommas(Math.round(num).toString());
+                }
+            }
+        });
+    });
+    
+    inputs.forEach(input => {
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                calculateMWRR();
+            }
+        });
+    });
+});
+</script>
+
+</body>
+</html>
